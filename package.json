@@ -1,0 +1,11 @@
+{
+  "name": "opencode-agent-harness",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenCode plugins for unattended coding-agent loops on local models: loop continuation, subagent cap, stall watchdog, edit-loop guardrails, read-only harness protection, project memory.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "bun test"
+  }
+}
