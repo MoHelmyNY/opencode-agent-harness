@@ -308,6 +308,23 @@ real receipts.
   metrics URL and the memory gateway at loopback fakes. Nothing touches your real config or state.
 - **Speed.** A full run takes about 15 s.
 
+**Baseline.** [`evals/results/2026-10-02T08-51-56-632Z.json`](evals/results/2026-10-02T08-51-56-632Z.json) was
+recorded on harness commit `1de7d46`, with the plugins unmodified, under Bun 1.4.0. It scored **16/16 scenarios and
+54/54 checks**. Its numbers:
+
+- **Loop backoff.** A blocked task repeating for two simulated hours got **8 continuations**, against about 184 with
+  no brake. They came at 30 s, 69 s, then 5-minute and 30-minute waits; the longest gap was 30.65 min, and the loop
+  never disarmed.
+- **Progress.** A lane committing every turn got 92 continuations in an hour with 0 backoffs.
+- **Subagents.** Of five on a local model, the queued three were admitted in order t3, t4, t5, after 11, 21 and 31 s.
+  Never more than 2 ran at once, and 0 failed.
+- **Watchdog.** A hung `grep` was aborted **314 s** after it started (5 min threshold plus the 15 s tick phase), or
+  **600 s** with the engine busy.
+- **Read-only guard.** **6/6** harness writes were refused, with 0 protected bytes changed; 5/5 ordinary calls were
+  allowed.
+- **Edit loop.** Nudges landed in the results of edits **6, 10 and 14**, with 0 system-prompt blocks added.
+- **Memory.** 30 requests produced **1 distinct system prompt** from 1 bootstrap call.
+
 **The eval can fail (mutation check).** Two behaviors were broken on purpose, the eval was run, and the change was
 reverted (`git diff --exit-code plugins guardrails` clean afterwards):
 
