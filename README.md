@@ -117,6 +117,11 @@ invalidated. A system-prompt change would re-prefill the whole conversation. No 
   - refusal from the 8th;
   - a session abort at the 15th, which writes a blocked record that `loop-continuation` honours.
 
+  Known gap, found by the eval: under OpenCode 1.18.29 a refused call never reaches `tool.execute.after`, so the
+  repeat count stops at 8. Every later repeat is still refused, but the 15th-call abort and its blocked record never
+  fire. The unit test reaches 15 only because it records results for refused calls. The eval reports the abort
+  count (0) without scoring it until the plugin counts refusals itself.
+
   A repeated call whose result *changes* is polling, not a loop, and never escalates.
 - **Context-budget notes** at 50% and 70% of the window, plus a one-time "you were compacted, the context is now N%"
   note. After a compaction, models kept repeating "context exhausted at 99%" when the real size was 40%.
