@@ -1,0 +1,83 @@
+{
+  "id": "loop-01-continue-actionable",
+  "title": "An idle loop session with actionable todos is continued",
+  "plugins": [
+    "loop-continuation"
+  ],
+  "behavior": "A session armed with the loop-start command goes idle while its todo list still holds actionable work; the loop sends the next prompt itself after the debounce.",
+  "inputs": {
+    "sessions": {
+      "ses_lane": {
+        "messages": [
+          {
+            "role": "user",
+            "text": "# Loop Start Command\nWork the session todo list one ticket at a time."
+          }
+        ],
+        "todos": [
+          {
+            "content": "#1771 add retry to the uploader",
+            "status": "completed"
+          },
+          {
+            "content": "#1772 fix the date parser",
+            "status": "pending"
+          },
+          {
+            "content": "BLOCKED: #1773 waiting on the vendor fix",
+            "status": "pending"
+          }
+        ]
+      }
+    }
+  },
+  "timeline": [
+    {
+      "at": 0,
+      "do": "idle",
+      "session": "ses_lane"
+    },
+    {
+      "at": 120000,
+      "do": "end"
+    }
+  ],
+  "expected": "Exactly one continuation, 30 s after the idle (the shipped debounce), naming #1772 as the next todo (#1773 is BLOCKED). The loop stays armed.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "prompts",
+        "op": "==",
+        "value": 1
+      },
+      {
+        "metric": "promptTimesS",
+        "op": "==",
+        "value": [
+          30
+        ]
+      },
+      {
+        "metric": "receiptCount",
+        "label": "continueNamingNext",
+        "file": "loop-continuation",
+        "where": {
+          "reason": "continue",
+          "next": "#1772 fix the date parser"
+        },
+        "op": "==",
+        "value": 1
+      },
+      {
+        "metric": "disarmed",
+        "op": "==",
+        "value": false
+      }
+    ],
+    "report": [
+      "prompts",
+      "promptTimesS",
+      "disarmed"
+    ]
+  }
+}

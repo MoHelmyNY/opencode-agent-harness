@@ -1,0 +1,112 @@
+{
+  "id": "memory-02-failed-bootstrap-no-midsession-block",
+  "title": "A failed briefing never appears later in the same session",
+  "plugins": [
+    "project-memory"
+  ],
+  "behavior": "The gateway is down at the session's first message, then recovers. A block inserted mid-conversation would invalidate the whole cached prefix, so the session must stay without a briefing, also after a plugin reload.",
+  "inputs": {
+    "worktree": true,
+    "env": {
+      "PROJECT_MEMORY_TOKEN": "eval-token-not-a-secret"
+    },
+    "files": {
+      "{HOME}/.config/opencode/project-memory.json": {
+        "schema_version": 1,
+        "gateway_url": "{GATEWAY}",
+        "token_env": "PROJECT_MEMORY_TOKEN",
+        "directories": {
+          "{WORK_SLUG}": {
+            "enabled": true,
+            "project_id": "app"
+          }
+        },
+        "capture": {
+          "on_commit": false,
+          "on_verify_receipt": false,
+          "on_session_end": false
+        }
+      }
+    },
+    "gateway": {
+      "mode": "down",
+      "briefing": "# Project memory\n\n- VERIFIED: the uploader retries three times before failing.\n- observation: lanes run at most three local test runs per ticket.\n\ngenerated {NOW} (request {N})"
+    }
+  },
+  "timeline": [
+    {
+      "at": 0,
+      "do": "userMessage",
+      "session": "ses_main",
+      "text": "Fix the date parser in src/dates.py"
+    },
+    {
+      "at": 1000,
+      "do": "systemTransform",
+      "session": "ses_main",
+      "times": 5
+    },
+    {
+      "at": 60000,
+      "do": "gateway",
+      "mode": "ok"
+    },
+    {
+      "at": 61000,
+      "do": "userMessage",
+      "session": "ses_main",
+      "text": "Now add a regression test"
+    },
+    {
+      "at": 62000,
+      "do": "systemTransform",
+      "session": "ses_main",
+      "times": 5
+    },
+    {
+      "at": 120000,
+      "do": "reloadPlugins"
+    },
+    {
+      "at": 121000,
+      "do": "systemTransform",
+      "session": "ses_main",
+      "times": 5
+    },
+    {
+      "at": 122000,
+      "do": "end"
+    }
+  ],
+  "expected": "No memory block in any of the 15 requests; one bootstrap attempt in total; one distinct system prompt.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "systemBlocksAdded",
+        "op": "==",
+        "value": 0
+      },
+      {
+        "metric": "distinctSystemPrompts",
+        "op": "==",
+        "value": 1
+      },
+      {
+        "metric": "gatewayCalls",
+        "label": "bootstrapCalls",
+        "route": "bootstrap",
+        "op": "==",
+        "value": 1
+      }
+    ],
+    "report": [
+      "transforms",
+      "systemBlocksAdded",
+      {
+        "metric": "gatewayCalls",
+        "label": "bootstrapCalls",
+        "route": "bootstrap"
+      }
+    ]
+  }
+}

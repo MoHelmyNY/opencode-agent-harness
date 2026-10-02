@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "note": "Frozen eval scenario set. evals/run.ts refuses to run when a file's SHA-256 differs, a listed file is missing, or an unlisted file is present.",
+  "scenarios": [
+    {
+      "file": "scenarios/framework-01-protected-writes-refused.json",
+      "id": "framework-01-protected-writes-refused",
+      "sha256": "ea55fb0a2ba8c1cdb554951c48c5d64b63304f38931c6a9a48212877251fbb80"
+    },
+    {
+      "file": "scenarios/framework-02-ordinary-work-allowed.json",
+      "id": "framework-02-ordinary-work-allowed",
+      "sha256": "93140c8510f8fa5f0425a6dff4b726aceab2003898850e66513d975fa48868c0"
+    },
+    {
+      "file": "scenarios/guardrails-01-edit-loop-nudge-in-tool-output.json",
+      "id": "guardrails-01-edit-loop-nudge-in-tool-output",
+      "sha256": "a224cab13d7cfae3e5da26e90c182290b821c7fa92c1a83abcb88ce4b0649d93"
+    },
+    {
+      "file": "scenarios/guardrails-02-identical-repeat-refused.json",
+      "id": "guardrails-02-identical-repeat-refused",
+      "sha256": "2e848adb91e5a37b379511d274f3df4b244ac50b883350d7c11086223f633c6f"
+    },
+    {
+      "file": "scenarios/loop-01-continue-actionable.json",
+      "id": "loop-01-continue-actionable",
+      "sha256": "4241fc173e74be18fad5ffbb95b3fd050914a669e2817ec65e25248d299b8032"
+    },
+    {
+      "file": "scenarios/loop-02-idle-no-actionable-work.json",
+      "id": "loop-02-idle-no-actionable-work",
+      "sha256": "22440557f9bedccb1746de2bfff0b663b201351954bbaada562fcb1a1ba3fd11"
+    },
+    {
+      "file": "scenarios/loop-03-parking-word-mid-text.json",
+      "id": "loop-03-parking-word-mid-text",
+      "sha256": "84e41c418780ac4e7749121328116111912fd6a741a8e447253e8f7a684fb4b7"
+    },
+    {
+      "file": "scenarios/loop-04-backoff-blocked-repeat.json",
+      "id": "loop-04-backoff-blocked-repeat",
+      "sha256": "f47e84f4aeef0224badc6457ba9f9d2325f9a1c911458edbc02a6a5eec53946e"
+    },
+    {
+      "file": "scenarios/loop-05-progress-resets-brake.json",
+      "id": "loop-05-progress-resets-brake",
+      "sha256": "1cc1f4276bc5f2a8518c6ab03f294185bbfdaffa77c9ffab2cfedeb5f5240c54"
+    },
+    {
+      "file": "scenarios/loop-06-owner-stop.json",
+      "id": "loop-06-owner-stop",
+      "sha256": "ad68ee4be32b8b782493e80cb5fc25607cf467b12fa29c6945a10d91a09de95c"
+    },
+    {
+      "file": "scenarios/memory-01-briefing-byte-identical.json",
+      "id": "memory-01-briefing-byte-identical",
+      "sha256": "9135a8bbdba1a679b326683ffc4671c83073f5407dd21749e8ad6d19038b1331"
+    },
+    {
+      "file": "scenarios/memory-02-failed-bootstrap-no-midsession-block.json",
+      "id": "memory-02-failed-bootstrap-no-midsession-block",
+      "sha256": "2e6d4ee2491bb5502016078df3b96f7441f59497a4c34da3cd74c417f9f284b2"
+    },
+    {
+      "file": "scenarios/subagent-01-third-call-queues-fifo.json",
+      "id": "subagent-01-third-call-queues-fifo",
+      "sha256": "7ee08b90ee3f014a32ca3c727073c8459225480b6f6fb95796626f42813f9ddc"
+    },
+    {
+      "file": "scenarios/subagent-02-api-model-uncapped.json",
+      "id": "subagent-02-api-model-uncapped",
+      "sha256": "013fc523a9f5302092ce8757bacf3835a47b4d71944cc2a8e6eab40e261ece25"
+    },
+    {
+      "file": "scenarios/watchdog-01-hung-tool-aborted.json",
+      "id": "watchdog-01-hung-tool-aborted",
+      "sha256": "b4eb1b42b62f9629395dacb956c3e0570ed1abdeae790fb1953bd859edf62b4f"
+    },
+    {
+      "file": "scenarios/watchdog-02-busy-engine-defers.json",
+      "id": "watchdog-02-busy-engine-defers",
+      "sha256": "f632629793cdcb8030c7be4d31b5251f48aac5333d05f386fecb8db3dcb31422"
+    }
+  ]
+}

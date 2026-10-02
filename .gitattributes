@@ -1,0 +1,2 @@
+# The eval scenario set is frozen by SHA-256 (evals/manifest.json); keep its bytes identical on every platform.
+evals/** text eol=lf

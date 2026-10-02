@@ -1,0 +1,59 @@
+{
+  "id": "loop-03-parking-word-mid-text",
+  "title": "A parking word inside a todo's first 40 characters makes it not actionable",
+  "plugins": [
+    "loop-continuation"
+  ],
+  "behavior": "Todos carry BLOCKED / OWNER-ONLY / ESCALATED after a ticket prefix, not at column 0 (the anchor bug behind 488 re-prompts of 'E1 #1860 BLOCKED: ...'). Nothing is actionable, so nothing is continued.",
+  "inputs": {
+    "sessions": {
+      "ses_lane": {
+        "messages": [
+          {
+            "role": "user",
+            "text": "# Loop Start Command\nWork the session todo list one ticket at a time."
+          }
+        ],
+        "todos": [
+          {
+            "content": "E1 #1860 BLOCKED: waiting on the judge verdict",
+            "status": "pending"
+          },
+          {
+            "content": "A2 #1473 OWNER-ONLY: live database remint",
+            "status": "in_progress"
+          },
+          {
+            "content": "C3 #1874 ESCALATED: schema question",
+            "status": "pending"
+          }
+        ]
+      }
+    }
+  },
+  "timeline": [
+    {
+      "at": 0,
+      "do": "idle",
+      "session": "ses_lane"
+    },
+    {
+      "at": 3600000,
+      "do": "end"
+    }
+  ],
+  "expected": "No continuation: all three todos are parked by a marker inside their first 40 characters.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "prompts",
+        "op": "==",
+        "value": 0
+      }
+    ],
+    "report": [
+      "prompts",
+      "disarmReason"
+    ]
+  }
+}

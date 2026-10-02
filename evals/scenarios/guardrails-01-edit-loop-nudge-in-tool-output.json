@@ -1,0 +1,78 @@
+{
+  "id": "guardrails-01-edit-loop-nudge-in-tool-output",
+  "title": "Edit-loop nudges go into the tool result, never the system prompt",
+  "plugins": [
+    "qwen-guardrails"
+  ],
+  "behavior": "The model edits one file fifteen times (each edit different, so this is not a repeat). The nudge must land at the tail of the edit's tool result, so the engine's cached prompt prefix is never invalidated; the system prompt must not change.",
+  "inputs": {
+    "worktree": true
+  },
+  "timeline": [
+    {
+      "at": 0,
+      "do": "toolRepeat",
+      "session": "ses_lane",
+      "tool": "edit",
+      "times": 15,
+      "varyArgs": true,
+      "args": {
+        "filePath": "{WORK}/src/inventory.py",
+        "oldString": "v{I}",
+        "newString": "v{I} + 1\n"
+      },
+      "output": "Edit applied successfully."
+    },
+    {
+      "at": 1000,
+      "do": "systemTransform",
+      "session": "ses_lane",
+      "times": 3
+    },
+    {
+      "at": 2000,
+      "do": "end"
+    }
+  ],
+  "expected": "Nudges in the results of edits 6, 10 and 14 only; no system-prompt block added and no guardrail text in the system prompt.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "outputsContaining",
+        "label": "nudgedEdits",
+        "text": "[qwen-guardrails] This is edit #",
+        "op": "==",
+        "value": [
+          6,
+          10,
+          14
+        ]
+      },
+      {
+        "metric": "systemBlocksAdded",
+        "op": "==",
+        "value": 0
+      },
+      {
+        "metric": "systemContains",
+        "label": "systemHasGuardrailText",
+        "text": "qwen-guardrails",
+        "op": "==",
+        "value": false
+      },
+      {
+        "metric": "refused",
+        "op": "==",
+        "value": 0
+      }
+    ],
+    "report": [
+      {
+        "metric": "outputsContaining",
+        "label": "nudgedEdits",
+        "text": "[qwen-guardrails] This is edit #"
+      },
+      "systemBlocksAdded"
+    ]
+  }
+}

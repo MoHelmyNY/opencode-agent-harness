@@ -1,0 +1,74 @@
+{
+  "id": "loop-05-progress-resets-brake",
+  "title": "A loop that commits every turn is never backed off",
+  "plugins": [
+    "loop-continuation"
+  ],
+  "behavior": "The same next todo, but every turn ends in a confirmed git commit. A commit is progress, so the brake must not slow a working lane.",
+  "inputs": {
+    "sessions": {
+      "ses_lane": {
+        "messages": [
+          {
+            "role": "user",
+            "text": "# Loop Start Command\nWork the session todo list one ticket at a time."
+          }
+        ],
+        "todos": [
+          {
+            "content": "C1 #1773 migrate the upload callers",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
+    "model": {
+      "turnMs": 9000,
+      "toolsPerTurn": [
+        {
+          "tool": "bash",
+          "args": {
+            "command": "git commit -F .git/COMMIT_MSG"
+          },
+          "output": "[lane/c1 {SHA}] C1 #1773 migrate caller {TURN}\n 1 file changed, 4 insertions(+)"
+        }
+      ]
+    }
+  },
+  "timeline": [
+    {
+      "at": 0,
+      "do": "idle",
+      "session": "ses_lane"
+    },
+    {
+      "at": 3600000,
+      "do": "end"
+    }
+  ],
+  "expected": "No backoff in one simulated hour; a continuation every 39 s (about 92).",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "backoffs",
+        "op": "==",
+        "value": 0
+      },
+      {
+        "metric": "prompts",
+        "op": ">=",
+        "value": 85
+      },
+      {
+        "metric": "maxGapMin",
+        "op": "<=",
+        "value": 1
+      }
+    ],
+    "report": [
+      "prompts",
+      "backoffs",
+      "maxGapMin"
+    ]
+  }
+}

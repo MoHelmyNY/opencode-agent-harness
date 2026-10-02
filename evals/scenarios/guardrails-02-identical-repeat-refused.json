@@ -1,0 +1,65 @@
+{
+  "id": "guardrails-02-identical-repeat-refused",
+  "title": "An identical call repeated with identical results is noted, then refused",
+  "plugins": [
+    "qwen-guardrails"
+  ],
+  "behavior": "The model runs the same search fifteen times and gets the same empty result each time. It is told at the 3rd and 6th call and refused from the 8th. Hook order follows OpenCode 1.18: a refused call never reaches tool.execute.after.",
+  "inputs": {},
+  "timeline": [
+    {
+      "at": 0,
+      "do": "toolRepeat",
+      "session": "ses_lane",
+      "tool": "bash",
+      "times": 15,
+      "args": {
+        "command": "rg -n \"parseDate\" src/legacy"
+      },
+      "output": "(no output)"
+    },
+    {
+      "at": 1000,
+      "do": "end"
+    }
+  ],
+  "expected": "Notes in the results of calls 3 and 6; calls 8-15 refused before running, each refusal saying it was not run. Reported, not scored: session aborts (the README documents an abort at the 15th call; see the README's Evals section).",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "outputsContaining",
+        "label": "notedCalls",
+        "text": "consecutive identical call #",
+        "op": "==",
+        "value": [
+          3,
+          6
+        ]
+      },
+      {
+        "metric": "refusedAt",
+        "op": "==",
+        "value": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      {
+        "metric": "refusalsSayNotExecuted",
+        "op": "==",
+        "value": true
+      }
+    ],
+    "report": [
+      "firstRefusedAt",
+      "refused",
+      "aborts"
+    ]
+  }
+}

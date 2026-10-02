@@ -1,0 +1,112 @@
+{
+  "id": "memory-01-briefing-byte-identical",
+  "title": "The memory briefing is byte-identical on every request of a session",
+  "plugins": [
+    "project-memory"
+  ],
+  "behavior": "The gateway returns a briefing that differs on every request (it carries a timestamp and a counter). The plugin must fetch once and push the same bytes into the system prompt on every request, across a second user message and a plugin reload, so the engine's prefix cache is never invalidated.",
+  "inputs": {
+    "worktree": true,
+    "env": {
+      "PROJECT_MEMORY_TOKEN": "eval-token-not-a-secret"
+    },
+    "files": {
+      "{HOME}/.config/opencode/project-memory.json": {
+        "schema_version": 1,
+        "gateway_url": "{GATEWAY}",
+        "token_env": "PROJECT_MEMORY_TOKEN",
+        "directories": {
+          "{WORK_SLUG}": {
+            "enabled": true,
+            "project_id": "app"
+          }
+        },
+        "capture": {
+          "on_commit": false,
+          "on_verify_receipt": false,
+          "on_session_end": false
+        }
+      }
+    },
+    "gateway": {
+      "mode": "ok",
+      "briefing": "# Project memory\n\n- VERIFIED: the uploader retries three times before failing.\n- observation: lanes run at most three local test runs per ticket.\n\ngenerated {NOW} (request {N})"
+    }
+  },
+  "timeline": [
+    {
+      "at": 0,
+      "do": "userMessage",
+      "session": "ses_main",
+      "text": "Fix the date parser in src/dates.py"
+    },
+    {
+      "at": 1000,
+      "do": "systemTransform",
+      "session": "ses_main",
+      "times": 10
+    },
+    {
+      "at": 60000,
+      "do": "userMessage",
+      "session": "ses_main",
+      "text": "Now add a regression test"
+    },
+    {
+      "at": 61000,
+      "do": "systemTransform",
+      "session": "ses_main",
+      "times": 10
+    },
+    {
+      "at": 120000,
+      "do": "reloadPlugins"
+    },
+    {
+      "at": 121000,
+      "do": "systemTransform",
+      "session": "ses_main",
+      "times": 10
+    },
+    {
+      "at": 122000,
+      "do": "end"
+    }
+  ],
+  "expected": "30 requests, one distinct system prompt, exactly one memory block, one bootstrap call to the gateway.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "transforms",
+        "op": "==",
+        "value": 30
+      },
+      {
+        "metric": "distinctSystemPrompts",
+        "op": "==",
+        "value": 1
+      },
+      {
+        "metric": "systemBlocksAdded",
+        "op": "==",
+        "value": 1
+      },
+      {
+        "metric": "gatewayCalls",
+        "label": "bootstrapCalls",
+        "route": "bootstrap",
+        "op": "==",
+        "value": 1
+      }
+    ],
+    "report": [
+      "transforms",
+      "distinctSystemPrompts",
+      {
+        "metric": "gatewayCalls",
+        "label": "bootstrapCalls",
+        "route": "bootstrap"
+      }
+    ]
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "id": "subagent-01-third-call-queues-fifo",
+  "title": "A third subagent on a local model waits in line and is admitted first come, first served",
+  "plugins": [
+    "subagent-cap"
+  ],
+  "behavior": "One message launches five task-tool subagents on a local (vllm) model. Two run; the rest wait in line, never fail, and are admitted in arrival order as slots free.",
+  "inputs": {},
+  "timeline": [
+    {
+      "at": 0,
+      "do": "chatParams",
+      "session": "ses_parent",
+      "providerID": "vllm"
+    },
+    {
+      "at": 1000,
+      "do": "taskStart",
+      "session": "ses_parent",
+      "callIDs": [
+        "t1",
+        "t2",
+        "t3",
+        "t4",
+        "t5"
+      ]
+    },
+    {
+      "at": 11000,
+      "do": "taskEnd",
+      "session": "ses_parent",
+      "callIDs": [
+        "t1"
+      ]
+    },
+    {
+      "at": 21000,
+      "do": "taskEnd",
+      "session": "ses_parent",
+      "callIDs": [
+        "t2"
+      ]
+    },
+    {
+      "at": 31000,
+      "do": "taskEnd",
+      "session": "ses_parent",
+      "callIDs": [
+        "t3"
+      ]
+    },
+    {
+      "at": 41000,
+      "do": "taskEnd",
+      "session": "ses_parent",
+      "callIDs": [
+        "t4",
+        "t5"
+      ]
+    },
+    {
+      "at": 60000,
+      "do": "end"
+    }
+  ],
+  "expected": "t1 and t2 start at once; t3, t4, t5 queue and are admitted in that order (about 10, 20 and 30 s later); no call fails; never more than 2 run at once.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "tasksAdmittedAtStart",
+        "op": "==",
+        "value": 2
+      },
+      {
+        "metric": "queuedAdmissionOrder",
+        "op": "==",
+        "value": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "metric": "tasksFailed",
+        "op": "==",
+        "value": 0
+      },
+      {
+        "metric": "tasksNeverAdmitted",
+        "op": "==",
+        "value": 0
+      },
+      {
+        "metric": "maxConcurrentTasks",
+        "op": "<=",
+        "value": 2
+      }
+    ],
+    "report": [
+      "queuedAdmissionOrder",
+      "taskWaitS",
+      "maxConcurrentTasks"
+    ]
+  }
+}

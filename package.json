@@ -6,6 +6,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "bun test"
+    "test": "bun test",
+    "eval": "bun evals/run.ts",
+    "eval:freeze": "bun evals/freeze.ts"
   }
 }

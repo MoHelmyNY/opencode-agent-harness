@@ -1,0 +1,78 @@
+{
+  "id": "loop-06-owner-stop",
+  "title": "The owner's 'stop the loop' ends the loop",
+  "plugins": [
+    "loop-continuation"
+  ],
+  "behavior": "A continued loop is interrupted by the owner typing 'stop the loop'; the pending continuation is cancelled and nothing more is sent, even with actionable todos left.",
+  "inputs": {
+    "sessions": {
+      "ses_lane": {
+        "messages": [
+          {
+            "role": "user",
+            "text": "# Loop Start Command\nWork the session todo list one ticket at a time."
+          }
+        ],
+        "todos": [
+          {
+            "content": "#1772 fix the date parser",
+            "status": "pending"
+          }
+        ]
+      }
+    },
+    "model": {
+      "turnMs": 9000,
+      "toolsPerTurn": []
+    }
+  },
+  "timeline": [
+    {
+      "at": 0,
+      "do": "idle",
+      "session": "ses_lane"
+    },
+    {
+      "at": 50000,
+      "do": "userMessage",
+      "session": "ses_lane",
+      "text": "stop the loop, I will take it from here"
+    },
+    {
+      "at": 80000,
+      "do": "idle",
+      "session": "ses_lane"
+    },
+    {
+      "at": 7200000,
+      "do": "end"
+    }
+  ],
+  "expected": "One continuation (at 30 s) before the owner's message; none after it; the loop disarms with 'owner said stop'.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "prompts",
+        "op": "==",
+        "value": 1
+      },
+      {
+        "metric": "promptsAfter",
+        "label": "promptsAfterStop",
+        "afterS": 50,
+        "op": "==",
+        "value": 0
+      },
+      {
+        "metric": "disarmReason",
+        "op": "==",
+        "value": "disarmed:owner said stop"
+      }
+    ],
+    "report": [
+      "prompts",
+      "disarmReason"
+    ]
+  }
+}

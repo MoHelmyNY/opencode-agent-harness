@@ -1,0 +1,65 @@
+{
+  "id": "watchdog-02-busy-engine-defers",
+  "title": "While the engine is decoding for someone, a stalled call gets twice the threshold",
+  "plugins": [
+    "stall-watchdog"
+  ],
+  "behavior": "The same hung grep, but the engine reports a running request (num_requests_running 1): the call may be waiting on the engine, so the abort is deferred to twice the threshold.",
+  "inputs": {
+    "engine": {
+      "running": 1
+    }
+  },
+  "timeline": [
+    {
+      "at": 0,
+      "do": "tool",
+      "session": "ses_child",
+      "tool": "grep",
+      "args": {
+        "pattern": "parseDate",
+        "path": "src"
+      },
+      "hang": true,
+      "callID": "grep_hung"
+    },
+    {
+      "at": 1800000,
+      "do": "end"
+    }
+  ],
+  "expected": "One abort, 600-615 s after the grep started; none at the plain 300 s threshold.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "aborts",
+        "op": "==",
+        "value": 1
+      },
+      {
+        "metric": "secondsToAbort",
+        "label": "secondsToAbort>=",
+        "callID": "grep_hung",
+        "session": "ses_child",
+        "op": ">=",
+        "value": 600
+      },
+      {
+        "metric": "secondsToAbort",
+        "label": "secondsToAbort<=",
+        "callID": "grep_hung",
+        "session": "ses_child",
+        "op": "<=",
+        "value": 615
+      }
+    ],
+    "report": [
+      {
+        "metric": "secondsToAbort",
+        "callID": "grep_hung",
+        "session": "ses_child"
+      },
+      "aborts"
+    ]
+  }
+}

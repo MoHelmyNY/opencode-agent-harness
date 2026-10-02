@@ -1,0 +1,64 @@
+{
+  "id": "subagent-02-api-model-uncapped",
+  "title": "Subagents on an API model are never capped",
+  "plugins": [
+    "subagent-cap"
+  ],
+  "behavior": "The same five-subagent message on a hosted API provider; the cap applies to local models only.",
+  "inputs": {},
+  "timeline": [
+    {
+      "at": 0,
+      "do": "chatParams",
+      "session": "ses_parent",
+      "providerID": "anthropic"
+    },
+    {
+      "at": 1000,
+      "do": "taskStart",
+      "session": "ses_parent",
+      "callIDs": [
+        "t1",
+        "t2",
+        "t3",
+        "t4",
+        "t5"
+      ]
+    },
+    {
+      "at": 11000,
+      "do": "taskEnd",
+      "session": "ses_parent",
+      "callIDs": [
+        "t1",
+        "t2",
+        "t3",
+        "t4",
+        "t5"
+      ]
+    },
+    {
+      "at": 20000,
+      "do": "end"
+    }
+  ],
+  "expected": "All five start immediately; none waits.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "tasksAdmittedAtStart",
+        "op": "==",
+        "value": 5
+      },
+      {
+        "metric": "tasksQueued",
+        "op": "==",
+        "value": 0
+      }
+    ],
+    "report": [
+      "tasksAdmittedAtStart",
+      "maxConcurrentTasks"
+    ]
+  }
+}

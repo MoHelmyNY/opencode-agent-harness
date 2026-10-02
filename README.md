@@ -229,6 +229,106 @@ The tests use temp directories for all state, so they never touch your real `~/.
 that spawn `git` raise bun's per-test timeout to 60 s, because a git call can take several seconds where process start
 is slow.
 
+## Evals
+
+The tests above check that each piece still works. The eval checks whether the harness, run as a whole, still does
+its job, and lets one run be compared with the next. The distinction is the one Marmelab's
+[State of AI Harness Engineering 2026](https://marmelab.com/blog/2026/09/24/the-state-of-ai-harness-engineering-2026.html)
+draws (François Zaninotto, 24 September 2026):
+
+- "A test tells you a script still works": a reproducible check, in code, that a function or hook behaves.
+- "An eval tells you the harness helps": freeze a set of tasks, run them end to end, and score the outcomes, so a
+  change to the harness can be seen to improve or degrade its behavior.
+
+```sh
+bun run eval                    # run the frozen set, print the scorecard, record the result
+bun run eval -- --no-record     # print only
+bun run eval -- --only <id>     # one scenario (never recorded)
+bun run eval:freeze             # rewrite the manifest after a deliberate change to the set
+```
+
+**What is frozen.** `evals/scenarios/*.json` holds 16 scenarios. Each declares:
+
+- the plugins under test;
+- its inputs: sessions, todos, files, scripted model behavior;
+- an event timeline;
+- the expected outcome in words;
+- a scoring rule: pass rules over named metrics, plus the numbers to report.
+
+`evals/manifest.json` lists every scenario file with its SHA-256. `evals/run.ts` refuses to run (exit 2) when a hash
+differs, a listed file is missing or an unlisted file is present, so the set cannot move silently. `.gitattributes`
+keeps the files LF on every platform, so the hashes hold on any checkout.
+
+**What it records.** Each run writes `evals/results/<UTC timestamp>.json` and appends the same object to
+`evals/results/history.jsonl`. The object holds:
+
+- the harness commit;
+- whether `plugins/` or `guardrails/` had uncommitted changes;
+- a SHA-256 of that code;
+- the manifest's own hash, so only runs of the same set are compared;
+- each scenario's checks and measured numbers;
+- totals.
+
+The exit code is 0 only when every scenario passes.
+
+| Scenario | Behavior scored |
+| --- | --- |
+| `loop-01-continue-actionable` | An armed, idle session with actionable todos is continued once, after the 30 s debounce, on the next actionable todo. |
+| `loop-02-idle-no-actionable-work` | With no actionable work and no QUEUE, nothing is sent and the loop disarms. |
+| `loop-03-parking-word-mid-text` | `E1 #1860 BLOCKED: ...`, `OWNER-ONLY` and `ESCALATED` inside the first 40 characters park a todo. |
+| `loop-04-backoff-blocked-repeat` | A blocked task repeating for 2 simulated hours: the re-prompts stay bounded, and the loop never disarms. |
+| `loop-05-progress-resets-brake` | A lane that commits every turn is never backed off. |
+| `loop-06-owner-stop` | "stop the loop" cancels the pending continuation and ends the loop. |
+| `subagent-01-third-call-queues-fifo` | Five subagents on a local model: two run, the rest queue in arrival order, none fails. |
+| `subagent-02-api-model-uncapped` | The same five on an API model all start at once. |
+| `watchdog-01-hung-tool-aborted` | A hung `grep` is aborted at the 5 min threshold; the parent's `task` call is not. |
+| `watchdog-02-busy-engine-defers` | With the engine busy, the abort waits for twice the threshold. |
+| `framework-01-protected-writes-refused` | Six attempts to edit, patch or shell-write the harness's own files are refused, and the files keep their bytes. |
+| `framework-02-ordinary-work-allowed` | The control: worktree edits and reads of the protected config go through. |
+| `guardrails-01-edit-loop-nudge-in-tool-output` | Fifteen edits to one file: nudges land in the results of edits 6, 10 and 14, and the system prompt never changes. |
+| `guardrails-02-identical-repeat-refused` | An identical search with identical results is noted at calls 3 and 6, then refused from the 8th. |
+| `memory-01-briefing-byte-identical` | 30 requests, a second message and a plugin reload: one distinct system prompt and one gateway fetch, although the gateway answers differently every time. |
+| `memory-02-failed-bootstrap-no-midsession-block` | A briefing that failed at the start never appears later in the session, even after the gateway recovers. |
+
+**How it runs, and what it is not.** The scenarios call the plugins' real exported hooks, and the plugins write their
+real receipts.
+
+- **Simulated, not live.** The model and the OpenCode client are simulated. The "model" is a script: a turn lasts a
+  set time, makes the tool calls the scenario lists, then the session goes idle. The client is an in-memory session
+  store. **No live model is called**, so the eval scores how the harness responds to a given model behavior. It catches
+  a harness change that breaks or weakens a behavior. It does not show that a real model finishes more work with the
+  harness than without it.
+- **Hook order.** Hooks run in OpenCode 1.18's order. Plugins are awaited in load order, and a throw in
+  `tool.execute.before` stops the call, so neither the tool nor `tool.execute.after` runs.
+- **Virtual time.** `Date.now` and the timers are replaced during a scenario, so every plugin runs at its **shipped
+  defaults** and two simulated hours take seconds. After each timer, the runner waits in real time for the plugins'
+  async work to go quiet.
+- **No behavior knobs are set.** The eval sets none of the plugins' behavior knobs. It points only paths at a temp
+  sandbox (`HOME`, `USERPROFILE`, `XDG_STATE_HOME` and the workflow and memory config paths), and it points vLLM's
+  metrics URL and the memory gateway at loopback fakes. Nothing touches your real config or state.
+- **Speed.** A full run takes about 15 s.
+
+**The eval can fail (mutation check).** Two behaviors were broken on purpose, the eval was run, and the change was
+reverted (`git diff --exit-code plugins guardrails` clean afterwards):
+
+| Mutation | Result |
+| --- | --- |
+| Backoff disabled (`backoffFor` returns 0) | 15/16. `loop-04` fails: 184 continuations in two simulated hours, one every 39 s, against a bound of 10; longest backoff 0 min. |
+| Read-only guard disabled (`tool.execute.before` returns at once) | 15/16. `framework-01` fails: 0 of 6 writes refused, 4 protected files changed. |
+
+In each case the failing scenario was the one covering the broken behavior, and the other 15 still passed.
+
+**A finding the eval surfaced.** `guardrails-02` reports 0 session aborts, although the repeat guard is documented
+above to abort at the 15th identical call.
+
+- **Why.** The guard counts a run of identical *results*, and a result is recorded in `tool.execute.after`. OpenCode
+  (1.18.29, `Plugin.trigger`) skips `tool.execute.after` for a call that `tool.execute.before` refused. So from the
+  8th call on, every repeat is refused and the count stays at 8. The abort never fires, and neither does the blocked
+  record that `loop-continuation` honours.
+- **Why the unit test missed it.** It reaches 15 because it records a result for refused calls as well.
+- **Status.** The scenario scores the refusals, which do hold, and reports the abort count, so a fix will show up as
+  a change in the recorded numbers.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

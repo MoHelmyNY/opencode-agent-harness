@@ -1,0 +1,81 @@
+{
+  "id": "watchdog-01-hung-tool-aborted",
+  "title": "A hung tool call is aborted at the threshold; a parent waiting on its subagent is not",
+  "plugins": [
+    "stall-watchdog"
+  ],
+  "behavior": "A subagent's grep never returns while the engine is idle (num_requests_running 0). Its parent is blocked on the task call meanwhile. The watchdog runs on its own 15 s tick with the shipped 5 minute threshold.",
+  "inputs": {
+    "engine": {
+      "running": 0
+    }
+  },
+  "timeline": [
+    {
+      "at": 0,
+      "do": "taskStart",
+      "session": "ses_parent",
+      "callIDs": [
+        "task_review"
+      ]
+    },
+    {
+      "at": 1000,
+      "do": "tool",
+      "session": "ses_child",
+      "tool": "grep",
+      "args": {
+        "pattern": "parseDate",
+        "path": "src"
+      },
+      "hang": true,
+      "callID": "grep_hung"
+    },
+    {
+      "at": 1200000,
+      "do": "end"
+    }
+  ],
+  "expected": "The child session is aborted once, 300-315 s after the grep started (threshold plus at most one tick). The parent's task call is never aborted.",
+  "scoring": {
+    "pass": [
+      {
+        "metric": "aborts",
+        "op": "==",
+        "value": 1
+      },
+      {
+        "metric": "abortedSessions",
+        "op": "==",
+        "value": [
+          "ses_child"
+        ]
+      },
+      {
+        "metric": "secondsToAbort",
+        "label": "secondsToAbort>=",
+        "callID": "grep_hung",
+        "session": "ses_child",
+        "op": ">=",
+        "value": 300
+      },
+      {
+        "metric": "secondsToAbort",
+        "label": "secondsToAbort<=",
+        "callID": "grep_hung",
+        "session": "ses_child",
+        "op": "<=",
+        "value": 315
+      }
+    ],
+    "report": [
+      {
+        "metric": "secondsToAbort",
+        "callID": "grep_hung",
+        "session": "ses_child"
+      },
+      "aborts",
+      "abortedSessions"
+    ]
+  }
+}
