@@ -1,0 +1,19 @@
+# Runs the unit tests and the frozen 16-scenario eval on every push and pull request, so the counts
+# the README and mohamedhelmy.com cite are verifiable from the badge rather than self-reported.
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.0"
+      - name: Unit tests
+        run: bun test
+      - name: Frozen eval (print only, never records a result)
+        run: bun run eval -- --no-record
