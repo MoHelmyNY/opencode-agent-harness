@@ -1,5 +1,7 @@
 # opencode-agent-harness
 
+[![tests](https://github.com/MoHelmyNY/opencode-agent-harness/actions/workflows/tests.yml/badge.svg)](https://github.com/MoHelmyNY/opencode-agent-harness/actions/workflows/tests.yml)
+
 Six [OpenCode](https://opencode.ai) plugins for running coding agents unattended, most of all on a **local model**
 (a Qwen model served by vLLM, sharing one GPU's KV cache between several sessions). Each plugin exists because of a
 specific failure seen in long autonomous runs. The header comment of every file records that failure and the
